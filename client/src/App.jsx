@@ -11,8 +11,11 @@ import Contact from "./pages/Contact";
 import Reservation from "./pages/Reservation";
 import Cart from "./pages/Cart"; 
 import NotFound from "./pages/NotFound";
-
-
+import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
+import OrderStatus from "./pages/OrderStatus";
+import UpdateMenu from './components/admin/UpdateMenu';
+import ProtectedRoute from "./components/layout/ProtectedRoute";
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -27,24 +30,37 @@ function App() {
     <CartProvider>
       <BrowserRouter>
         <ScrollToTop />
-        <div className="flex min-h-screen flex-col">
-          <Navbar />
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/menu" element={<Menu />} />
-              <Route path="/cart" element={<Cart />} /> 
-              <Route path="/ai" element={<AIAssistant />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/reservation" element={<Reservation />} />
-               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+        <AppContent />
       </BrowserRouter>
     </CartProvider>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      {!isAdminPath && <Navbar />}
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/menu" element={<Menu />} />
+          <Route path="/cart" element={<Cart />} /> 
+          <Route path="/order/:id" element={<OrderStatus />} />
+          <Route path="/ai" element={<AIAssistant />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/edit-menu/:id" element={<ProtectedRoute><UpdateMenu /></ProtectedRoute>} />
+          <Route path="/reservation" element={<Reservation />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+      {!isAdminPath && <Footer />}
+    </div>
   );
 }
 

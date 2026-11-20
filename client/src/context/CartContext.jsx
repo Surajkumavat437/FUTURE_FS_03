@@ -57,7 +57,7 @@ export const CartProvider = ({ children }) => {
   // Memoize totals for performance and to provide a clean bill breakdown
   const totals = useMemo(() => {
     const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const tax = subtotal * 0.05; // 5% GST
+    const tax = Math.round(subtotal * 0.05 * 100) / 100; // 5% GST
     const serviceCharge = subtotal > 0 ? 25 : 0; // Flat service fee if cart not empty
     
     return {

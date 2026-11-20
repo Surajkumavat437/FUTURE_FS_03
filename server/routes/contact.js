@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const {createContact} = require("../controllers/contact");
+const { protect } = require("../middleware/authMiddleware");
+const { createContact, getMessages, deleteMessage } = require("../controllers/contact");
 
-// Remove the extra '/contact' here. Just use '/'
+// PUBLIC: For customers to send you messages
 router.post('/', createContact);
+
+// ADMIN ONLY: To view and delete messages in the Admin Panel
+router.get('/', protect, getMessages);
+router.delete('/:id', protect, deleteMessage);
 
 module.exports = router;

@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, RefreshCw, Leaf } from "lucide-react";
 import { getAIRecommendation } from "../../services/aiService";
+import { useCart } from "../../context/CartContext";
+import { ShoppingBag } from "lucide-react";
 
 const AIChatBox = () => {
+  const { addToBag } = useCart();
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Welcome to the Atelier. I am your digital concierge. How may I guide your palate today?" }
   ]);
@@ -18,7 +21,7 @@ const AIChatBox = () => {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping || input.trim().length > 2000) return;
 
     const userMessage = { role: "user", content: input };
     const newHistory = [...messages, userMessage]; 
@@ -29,7 +32,15 @@ const AIChatBox = () => {
 
     try {
       const response = await getAIRecommendation(newHistory); 
-      setMessages(prev => [...prev, { role: "assistant", content: response.reply }]);
+      if (response.addRequested && response.recommendedItem) {
+        addToBag(response.recommendedItem);
+      }
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: response.reply,
+        recommendedItem: response.recommendedItem,
+        addedToCart: Boolean(response.addRequested && response.recommendedItem)
+      }]);
     } catch (error) {
       console.error("Concierge Service Error:", error);
       setMessages(prev => [...prev, { 
@@ -81,6 +92,17 @@ const AIChatBox = () => {
                   : "bg-white text-[#344E41] border border-[#344E41]/5 rounded-tl-none font-serif italic"
               }`}>
                 {msg.content}
+                {msg.recommendedItem && (
+                  <div className="mt-4 rounded-2xl border border-[#344E41]/10 bg-[#F4F1DE]/70 p-4 not-italic">
+                    <div className="font-sans text-sm font-bold">{msg.recommendedItem.name}</div>
+                    <div className="mt-1 font-sans text-xs opacity-70">₹{msg.recommendedItem.price}</div>
+                    {msg.addedToCart && (
+                      <div className="mt-3 flex items-center gap-2 font-sans text-xs font-semibold text-[#344E41]">
+                        <ShoppingBag size={14} /> Added to your cart
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -105,13 +127,16 @@ const AIChatBox = () => {
           <input
             type="text"
             value={input}
+            maxLength={2000}
+            disabled={isTyping}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Describe your desired flavor profile..."
             className="w-full bg-[#F4F1DE]/50 border border-[#344E41]/10 rounded-full px-8 py-5 text-sm text-[#344E41] focus:outline-none focus:border-[#344E41] focus:bg-white transition-all placeholder:text-[#344E41]/30 italic font-serif"
           />
           <button 
-            type="submit" 
-            className="absolute right-2 p-4 bg-[#344E41] hover:bg-[#3E5C4D] text-[#F4F1DE] rounded-full transition-all shadow-lg active:scale-90 group-hover:rotate-[-10deg]"
+            type="submit"
+            disabled={isTyping || !input.trim()}
+            className="absolute right-2 p-4 bg-[#344E41] hover:bg-[#3E5C4D] disabled:opacity-50 text-[#F4F1DE] rounded-full transition-all shadow-lg active:scale-90 group-hover:rotate-[-10deg]"
           >
             <Send size={18} />
           </button>

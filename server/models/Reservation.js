@@ -9,6 +9,11 @@ const reservationSchema = new mongoose.Schema({
   time: { type: String, required: true },
   guests: { type: Number, required: true }, // Renamed from people
   requests: { type: String }, // Added
+  status: { 
+    type: String, 
+    enum: ["pending", "confirmed", "cancelled"], 
+    default: "pending" 
+  },
   createdAt: { type: Date, default: Date.now } // Good for tracking
 });
 

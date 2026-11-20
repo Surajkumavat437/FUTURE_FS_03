@@ -1,9 +1,36 @@
 import { useCart } from "../context/CartContext";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Trash2, ArrowLeft, Plus, Minus, ReceiptText } from "lucide-react";
+import { useState } from "react";
+import { createOrder } from "../services/orderService";
 
 const Cart = () => {
-  const { cart, addToBag, decreaseQuantity, removeFromBag, totals } = useCart();
+  const { cart, addToBag, decreaseQuantity, removeFromBag, clearCart, totals } = useCart();
+  const navigate = useNavigate();
+  const [customerName, setCustomerName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [serviceType, setServiceType] = useState("pickup");
+  const [tableNumber, setTableNumber] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const placeOrder = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      const response = await createOrder({
+        customerName, phone, serviceType, tableNumber,
+        items: cart.map(({ _id, quantity }) => ({ menuItem: _id, quantity })),
+      });
+      clearCart();
+      navigate(`/order/${response.data.data._id}`);
+    } catch (err) {
+      setError(err.response?.data?.message || "Your order could not be placed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (cart.length === 0) {
     return (
@@ -74,6 +101,24 @@ const Cart = () => {
                 <h2 className="text-[10px] uppercase tracking-[0.4em] font-black text-[#344E41]">Final Invoice</h2>
               </div>
 
+              <form onSubmit={placeOrder} className="space-y-4 mb-8">
+                <label className="block text-xs font-bold text-[#344E41]">Your name
+                  <input required maxLength={100} value={customerName} onChange={(event) => setCustomerName(event.target.value)} className="mt-1 w-full rounded-xl border border-[#A3B18A]/30 px-4 py-3 text-sm outline-none focus:border-[#344E41]" autoComplete="name" />
+                </label>
+                <label className="block text-xs font-bold text-[#344E41]">Phone
+                  <input required maxLength={30} type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1 w-full rounded-xl border border-[#A3B18A]/30 px-4 py-3 text-sm outline-none focus:border-[#344E41]" autoComplete="tel" />
+                </label>
+                <fieldset>
+                  <legend className="text-xs font-bold text-[#344E41] mb-2">Service</legend>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ value: "pickup", label: "Pickup" }, { value: "table", label: "At table" }].map((option) => <label key={option.value} className={`text-center rounded-xl border px-3 py-3 text-xs font-bold cursor-pointer ${serviceType === option.value ? "border-[#344E41] bg-[#344E41] text-white" : "border-[#A3B18A]/30"}`}><input className="sr-only" type="radio" name="serviceType" value={option.value} checked={serviceType === option.value} onChange={() => setServiceType(option.value)} />{option.label}</label>)}
+                  </div>
+                </fieldset>
+                {serviceType === "table" && <label className="block text-xs font-bold text-[#344E41]">Table number
+                  <input required maxLength={20} value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} className="mt-1 w-full rounded-xl border border-[#A3B18A]/30 px-4 py-3 text-sm outline-none focus:border-[#344E41]" />
+                </label>}
+                {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
               <div className="space-y-4 border-b border-dashed border-[#A3B18A]/30 pb-6 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#344E41]/60 font-serif italic">Subtotal</span>
@@ -94,13 +139,14 @@ const Cart = () => {
                 <span className="text-4xl font-serif text-[#344E41]">₹{totals.total.toFixed(2)}</span>
               </div>
 
-              <button className="w-full bg-[#344E41] text-[#F4F1DE] py-5 rounded-2xl text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-[#D4AF37] hover:text-[#344E41] transition-all duration-500 shadow-xl active:scale-[0.98]">
-                Place Order
+              <button disabled={submitting} className="w-full bg-[#344E41] text-[#F4F1DE] py-5 rounded-2xl text-[10px] uppercase tracking-[0.3em] font-bold hover:bg-[#D4AF37] hover:text-[#344E41] transition-all duration-500 shadow-xl active:scale-[0.98] disabled:opacity-60">
+                {submitting ? "Placing Order…" : "Place Order"}
               </button>
               
               <p className="text-[8px] text-center mt-6 text-[#A3B18A] uppercase tracking-widest font-medium">
                 Thank you for choosing Atelier Cozy
               </p>
+              </form>
             </div>
           </div>
         </div>

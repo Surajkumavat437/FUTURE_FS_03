@@ -52,15 +52,31 @@ const Menu = () => {
     fetchMenu(selectedCategory);
   }, [selectedCategory]);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const filteredItems = useMemo(() => {
-    if (!searchQuery) return menuItems;
-    const fuse = new Fuse(menuItems, {
-      keys: ["name", "description", "category"],
-      threshold: 0.3,
-    });
-    const results = fuse.search(searchQuery);
-    return results.map((result) => result.item);
+    let result = menuItems;
+    if (searchQuery) {
+      const fuse = new Fuse(menuItems, {
+        keys: ["name", "description", "category"],
+        threshold: 0.3,
+      });
+      result = fuse.search(searchQuery).map((result) => result.item);
+    }
+    return result;
   }, [searchQuery, menuItems]);
+
+  // Reset to first page when search or category changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory]);
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const paginatedItems = filteredItems.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="min-h-screen bg-[#F4F1DE] text-[#344E41] pt-28 pb-20 selection:bg-[#A3B18A] selection:text-white">
@@ -146,29 +162,58 @@ const Menu = () => {
             <p className="text-red-500 text-lg">{error}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {filteredItems.length > 0 ? (
-              filteredItems.map((item, idx) => (
-                <div
-                  key={item._id}
-                  className="animate-in fade-in slide-in-from-bottom-5 duration-700 ease-out"
-                  style={{ transitionDelay: `${idx * 40}ms` }}
-                >
-                  <MenuCard item={item} />
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {paginatedItems.length > 0 ? (
+                paginatedItems.map((item, idx) => (
+                  <div
+                    key={item._id}
+                    className="animate-in fade-in slide-in-from-bottom-5 duration-700 ease-out"
+                    style={{ transitionDelay: `${idx * 40}ms` }}
+                  >
+                    <MenuCard item={item} />
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-24 bg-white/40 rounded-3xl border border-dashed border-[#A3B18A]/40">
+                  <UtensilsCrossed
+                    className="mx-auto h-10 w-10 text-[#A3B18A]/40 mb-4"
+                    strokeWidth={1}
+                  />
+                  <p className="text-[#344E41] font-serif italic text-xl">
+                    We couldn't find "{searchQuery}" in our kitchen today.
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-24 bg-white/40 rounded-3xl border border-dashed border-[#A3B18A]/40">
-                <UtensilsCrossed
-                  className="mx-auto h-10 w-10 text-[#A3B18A]/40 mb-4"
-                  strokeWidth={1}
-                />
-                <p className="text-[#344E41] font-serif italic text-xl">
-                  We couldn't find "{searchQuery}" in our kitchen today.
-                </p>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="mt-20 flex justify-center items-center gap-6">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-6 py-2 rounded-full border border-[#344E41] text-[#344E41] text-[10px] uppercase font-bold tracking-widest hover:bg-[#344E41] hover:text-[#F4F1DE] transition-all disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-[#344E41]"
+                >
+                  Previous
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-serif italic text-[#344E41]">Page</span>
+                  <span className="w-8 h-8 flex items-center justify-center bg-[#344E41] text-[#F4F1DE] rounded-full text-xs font-bold">
+                    {currentPage}
+                  </span>
+                  <span className="text-xs font-serif italic text-[#344E41]">of {totalPages}</span>
+                </div>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-6 py-2 rounded-full border border-[#344E41] text-[#344E41] text-[10px] uppercase font-bold tracking-widest hover:bg-[#344E41] hover:text-[#F4F1DE] transition-all disabled:opacity-30 disabled:hover:bg-white disabled:hover:text-[#344E41]"
+                >
+                  Next
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Floating Summary - Linked to Cart Page */}

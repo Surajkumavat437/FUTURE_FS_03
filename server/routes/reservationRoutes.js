@@ -1,15 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const Reservation = require('../models/Reservation');
+const { protect } = require("../middleware/authMiddleware"); 
+const { 
+    createReservation, 
+    getReservations,
+    deleteReservation,
+    updateReservationStatus
+} = require("../controllers/reservationController");
 
-router.post('/', async (req, res) => {
-  try {
-    const newReservation = new Reservation(req.body);
-    await newReservation.save();
-    res.status(201).json({ success: true, message: "Table booked successfully!" });
-  } catch (err) {
-    res.status(400).json({ success: false, error: err.message });
-  }
-});
+// PUBLIC ROUTE
+router.post('/', createReservation);
+
+// ADMIN ROUTES
+// Get all reservations
+router.get('/', protect, getReservations);
+
+// Update status
+router.patch('/:id/status', protect, updateReservationStatus);
+
+// Delete reservation
+router.delete('/:id', protect, deleteReservation); 
 
 module.exports = router;

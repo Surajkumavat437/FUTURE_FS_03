@@ -44,6 +44,14 @@ const MenuCard = ({ item }) => {
         </div>
         
         <div className="w-8 h-[1px] bg-[#D4AF37]/30 mb-4 group-hover:w-full transition-all duration-1000 ease-in-out"></div>
+
+        {(item.dietaryTags?.length > 0 || item.allergens?.length > 0 || !item.ingredientInfoComplete) && (
+          <div className="mb-3 flex flex-wrap gap-1.5 text-[9px] leading-relaxed">
+            {item.dietaryTags?.map(tag => <span key={tag} className="rounded-full bg-[#A3B18A]/15 px-2.5 py-1 text-[#344E41]">{tag}</span>)}
+            {item.allergens?.length > 0 && <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-900">Contains: {item.allergens.join(", ")}</span>}
+            {!item.ingredientInfoComplete && <span className="text-[#344E41]/60">Ingredient and allergen details not verified</span>}
+          </div>
+        )}
         
         <div className="flex justify-between items-center">
           <p className="text-[13px] text-[#588157] font-light leading-relaxed max-w-[75%] italic line-clamp-2">
